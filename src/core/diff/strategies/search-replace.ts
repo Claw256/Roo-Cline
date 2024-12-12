@@ -122,47 +122,32 @@ Your search/replace content here
         
         // Apply the replacement while preserving exact indentation
         const indentedReplace = replaceLines.map((line, i) => {
-            // Get the corresponding original and search indentations
-            const originalIndent = originalIndents[Math.min(i, originalIndents.length - 1)];
-            const searchIndent = searchIndents[Math.min(i, searchIndents.length - 1)];
-            
-            // Get the current line's indentation
+            // Get the base original indentation from the first matched line
+            const originalIndent = originalIndents[0] || '';
+            // Determine the indentation character (tab or space)
+            const indentChar = originalIndent.charAt(0) || '\t';
+            // Calculate the indentation level of the original line
+            const originalLevel = Math.floor(originalIndent.length / indentChar.length);
+
+            // Get the current line's indentation in the replace block
             const currentIndentMatch = line.match(/^[\t ]*/);
             const currentIndent = currentIndentMatch ? currentIndentMatch[0] : '';
-            
-            // If this line has the same indentation level as the search block,
-            // use the original indentation. Otherwise, calculate the difference
-            // and preserve the exact type of whitespace characters
-            if (currentIndent.length === searchIndent.length) {
-                return originalIndent + line.trim();
-            } else {
-                // Get the corresponding search line's indentation
-                const searchLineIndex = Math.min(i, searchLines.length - 1);
-                const searchLineIndent = searchIndents[searchLineIndex];
+            // Calculate the indentation level of the current line
+            const currentLevel = Math.floor(currentIndent.length / indentChar.length);
 
-                // Get the corresponding original line's indentation
-                const originalLineIndex = Math.min(i, originalIndents.length - 1);
-                const originalLineIndent = originalIndents[originalLineIndex];
+            // Get the corresponding search line's indentation
+            const searchLineIndex = Math.min(i, searchLines.length - 1);
+            const searchLineIndent = searchIndents[searchLineIndex] || '';
+             // Calculate the indentation level of the search line
+            const searchLevel = Math.floor(searchLineIndent.length / indentChar.length);
 
-                // If this line has the same indentation as its corresponding search line,
-                // use the original indentation
-                if (currentIndent === searchLineIndent) {
-                    return originalLineIndent + line.trim();
-                }
+            // Calculate the relative indentation level
+            const relativeLevel = currentLevel - searchLevel;
+            // Calculate the target indentation level by adding the relative level to the original level
+            const targetLevel = Math.max(0, originalLevel + relativeLevel);
 
-                // Otherwise, preserve the original indentation structure
-                const indentChar = originalLineIndent.charAt(0) || '\t';
-                const indentLevel = Math.floor(originalLineIndent.length / indentChar.length);
-
-                // Calculate the relative indentation from the search line
-                const searchLevel = Math.floor(searchLineIndent.length / indentChar.length);
-                const currentLevel = Math.floor(currentIndent.length / indentChar.length);
-                const relativeLevel = currentLevel - searchLevel;
-
-                // Apply the relative indentation to the original level
-                const targetLevel = Math.max(0, indentLevel + relativeLevel);
-                return indentChar.repeat(targetLevel) + line.trim();
-            }
+            // Apply the calculated indentation to the line
+            return indentChar.repeat(targetLevel) + line.trim();
         });
         
         // Construct the final content
